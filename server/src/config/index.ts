@@ -11,18 +11,10 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
   jwtExpiresIn: '7d',
   
-  // CORS
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
-  
-  // NowPayments - PAIEMENT CRYPTO UNIQUEMENT
+  // NowPayments - PAIEMENT CRYPTO
   nowPayments: {
-    // Clé API pour authentification
     apiKey: process.env.NOWPAYMENTS_API_KEY || '',
-    
-    // Secret IPN pour vérification des webhooks
     ipnSecret: process.env.NOWPAYMENTS_IPN_SECRET || '',
-    
-    // URL de l'API NowPayments (production)
     baseUrl: 'https://api.nowpayments.io/v1',
   },
   
@@ -32,16 +24,16 @@ export const config = {
   // Plans et tarifs (en USD)
   plans: {
     pro: {
-      price: 20, // $20.00
+      price: 20,
       name: 'Pro',
       analysisLimit: 100,
-      duration: 30, // jours
+      duration: 30,
     },
     enterprise: {
-      price: 99, // $99.00
+      price: 99,
       name: 'Enterprise',
-      analysisLimit: -1, // illimité
-      duration: 30, // jours
+      analysisLimit: -1,
+      duration: 30,
     },
   },
   
@@ -52,25 +44,15 @@ export const config = {
   },
 };
 
-// Validation de la configuration en production
+// Validation en production
 if (config.nodeEnv === 'production') {
-  const missingEnvVars: string[] = [];
-  
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'dev-secret-change-in-production') {
-    missingEnvVars.push('JWT_SECRET');
-  }
-  
-  if (!config.nowPayments.apiKey) {
-    console.warn('⚠️ NOWPAYMENTS_API_KEY non configurée - Mode widget uniquement');
+    console.error('❌ JWT_SECRET doit être configuré en production!');
+    process.exit(1);
   }
   
   if (!config.nowPayments.ipnSecret) {
     console.warn('⚠️ NOWPAYMENTS_IPN_SECRET non configuré - Vérification des webhooks désactivée');
-  }
-  
-  if (missingEnvVars.length > 0) {
-    console.error(`❌ Variables d'environnement manquantes: ${missingEnvVars.join(', ')}`);
-    process.exit(1);
   }
 }
 

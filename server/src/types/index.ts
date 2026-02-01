@@ -54,10 +54,9 @@ export interface Analysis {
   createdAt: Date;
 }
 
-// Crypto Currency Types
+// Payment Types
 export type CryptoCurrency = 'BTC' | 'ETH' | 'USDT' | 'USDC' | 'BNB' | 'SOL' | 'XRP' | 'MATIC';
 
-// Payment Types - CRYPTO ONLY
 export type PaymentStatus = 
   | 'pending' 
   | 'awaiting_payment' 
@@ -78,45 +77,11 @@ export interface Payment {
   paymentMethod: 'crypto';
   transactionId?: string;
   transactionHash?: string;
-  // Crypto specific fields
   cryptoCurrency?: CryptoCurrency;
   cryptoAmount?: string;
   walletAddress?: string;
-  // Timestamps
   createdAt: Date;
   completedAt?: Date;
-}
-
-// Payment Now Webhook - Crypto
-export interface PaymentNowWebhook {
-  event: 
-    | 'payment.completed' 
-    | 'payment.confirmed'
-    | 'payment.failed' 
-    | 'payment.expired'
-    | 'payment.underpaid'
-    | 'payment.overpaid'
-    | 'subscription.cancelled';
-  transactionId: string;
-  transactionHash?: string;
-  merchantId: string;
-  // Fiat amount
-  amount: number;
-  currency: string;
-  // Crypto details
-  cryptoAmount?: string;
-  cryptoCurrency?: CryptoCurrency;
-  walletAddress?: string;
-  confirmations?: number;
-  requiredConfirmations?: number;
-  // Metadata
-  metadata: {
-    userId: string;
-    plan: string;
-    payment_id?: string;
-  };
-  timestamp: string;
-  signature: string;
 }
 
 // API Response Types
@@ -142,12 +107,4 @@ export interface RegisterRequest {
   email: string;
   password: string;
   name: string;
-}
-
-// Payment Request - Crypto
-export interface CreateCryptoPaymentRequest {
-  plan: 'pro' | 'enterprise';
-  cryptoCurrency: CryptoCurrency;
-  returnUrl: string;
-  cancelUrl: string;
 }

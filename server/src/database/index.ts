@@ -1,15 +1,13 @@
 import { User, Analysis, Payment } from '../types';
 
-// In-memory database (replace with real DB in production)
-// This is structured to easily migrate to PostgreSQL, MongoDB, etc.
-
+// In-memory database (remplacer par une vraie DB en production)
 class Database {
   private users: Map<string, User> = new Map();
-  private usersByEmail: Map<string, string> = new Map(); // email -> id
+  private usersByEmail: Map<string, string> = new Map();
   private analyses: Map<string, Analysis> = new Map();
-  private analysesByUser: Map<string, string[]> = new Map(); // userId -> analysisIds
+  private analysesByUser: Map<string, string[]> = new Map();
   private payments: Map<string, Payment> = new Map();
-  private paymentsByUser: Map<string, string[]> = new Map(); // userId -> paymentIds
+  private paymentsByUser: Map<string, string[]> = new Map();
 
   // ==================== USERS ====================
   
@@ -130,15 +128,6 @@ class Database {
 
   // ==================== UTILITIES ====================
 
-  async clear(): Promise<void> {
-    this.users.clear();
-    this.usersByEmail.clear();
-    this.analyses.clear();
-    this.analysesByUser.clear();
-    this.payments.clear();
-    this.paymentsByUser.clear();
-  }
-
   getStats() {
     return {
       users: this.users.size,
@@ -148,6 +137,5 @@ class Database {
   }
 }
 
-// Export singleton instance
 export const db = new Database();
 export default db;

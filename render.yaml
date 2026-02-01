@@ -1,0 +1,20 @@
+# Render Blueprint - TradeScalpSnip
+# UN SEUL WEB SERVICE (Frontend + Backend)
+
+services:
+  - type: web
+    name: tradescalpsnip
+    runtime: node
+    region: frankfurt
+    plan: free
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NOWPAYMENTS_IPN_SECRET
+        sync: false

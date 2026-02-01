@@ -1,11 +1,14 @@
 {
-  "name": "tradescalpsnip-backend",
+  "name": "tradescalpsnip",
   "version": "1.0.0",
-  "description": "Backend API for TradeScalpSnip - AI Trading Analysis",
+  "description": "TradeScalpSnip - AI Trading Analysis Platform",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "dev:server": "tsx watch src/server.ts",
+    "dev:client": "cd .. && npm run dev",
+    "build:client": "cd .. && npm install && npm run build",
+    "build:server": "tsc",
+    "build": "npm run build:client && npm run build:server",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit"
   },
