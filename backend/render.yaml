@@ -1,0 +1,26 @@
+# Render Blueprint for TradeScalpSnip Backend
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: tradescalpsnip-api
+    env: node
+    region: frankfurt # or oregon, ohio, singapore
+    plan: free # or starter, standard, pro
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false # Set this manually to your frontend URL
+      - key: PAYMENT_NOW_API_KEY
+        sync: false
+      - key: PAYMENT_NOW_SECRET
+        sync: false
+      - key: PAYMENT_NOW_MERCHANT_ID
+        sync: false
+    autoDeploy: true
