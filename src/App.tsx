@@ -8,30 +8,18 @@ import { Pricing } from './pages/Pricing';
 import { Terms } from './pages/Terms';
 import { Privacy } from './pages/Privacy';
 import IntroVideo from './components/ui/IntroVideo';
-import Preloader from './components/ui/Preloader';
 
 export function App() {
-  const [loadingState, setLoadingState] = useState<'preloading' | 'intro' | 'content'>('preloading');
-
-  const handlePreloadComplete = () => {
-    setLoadingState('intro');
-  };
-
-  const handleIntroComplete = () => {
-    setLoadingState('content');
-  };
+  // On peut utiliser le localStorage pour ne pas montrer l'intro à chaque refresh si on veut
+  // Pour l'instant on la montre à chaque chargement complet (reload)
+  const [showIntro, setShowIntro] = useState(true);
 
   return (
     <>
-      {loadingState === 'preloading' && (
-        <Preloader onComplete={handlePreloadComplete} />
-      )}
-
-      {loadingState === 'intro' && (
-        <IntroVideo onComplete={handleIntroComplete} />
-      )}
+      {showIntro && <IntroVideo onComplete={() => setShowIntro(false)} />}
       
-      <div className={`${loadingState !== 'content' ? 'fixed inset-0 overflow-hidden opacity-0 pointer-events-none' : 'opacity-100 transition-opacity duration-1000'}`}>
+      {/* Le contenu principal est caché ou a une opacité réduite pendant l'intro si on veut une transition fluide */}
+      <div className={`${showIntro ? 'fixed inset-0 overflow-hidden opacity-0 pointer-events-none' : 'opacity-100 transition-opacity duration-1000'}`}>
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Landing />} />

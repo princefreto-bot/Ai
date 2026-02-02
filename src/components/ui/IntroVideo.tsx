@@ -47,7 +47,6 @@ const IntroVideo: React.FC<IntroVideoProps> = ({ onComplete }) => {
         autoPlay
         muted
         playsInline
-        preload="auto"
         onEnded={handleVideoEnd}
         className="absolute top-0 left-0 w-full h-full object-cover"
       >
