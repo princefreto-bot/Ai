@@ -35,7 +35,7 @@
     "typescript": "^5.3.3",
     "tsx": "^4.7.0"
   },
-  "devDependencies": {}
+  "devDependencies": {},
   "engines": {
     "node": ">=18.0.0"
   }
