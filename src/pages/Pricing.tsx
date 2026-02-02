@@ -72,7 +72,7 @@ export function Pricing() {
       icon: Crown,
       color: 'from-violet-500 to-purple-600',
       shadowColor: 'shadow-violet-500/25',
-      widgetId: '6221919011', // Widget ID NowPayments pour le plan Enterprise (à changer)
+      widgetId: '5896698183', // Widget ID NowPayments pour le plan Enterprise
       features: [
         'Analyses illimitées',
         'Tout le plan Pro inclus',
