@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config';
 import { db } from '../database';
@@ -11,7 +11,8 @@ const router = Router();
 
 const generateToken = (userId: string, email: string): string => {
   const payload: AuthTokenPayload = { userId, email };
-  return jwt.sign(payload, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
+  const options: SignOptions = { expiresIn: config.jwtExpiresIn };
+  return jwt.sign(payload, config.jwtSecret, options);
 };
 
 // POST /api/auth/register
