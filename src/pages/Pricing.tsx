@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence, useInView, useMotionValue, useTransform } from 'framer-motion';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { 
@@ -13,9 +14,75 @@ import {
   X,
   Wallet,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Sparkles
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
+
+// Composant 3D Card avec effet de perspective
+function Card3D({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  
+  const rotateX = useTransform(y, [-0.5, 0.5], [10, -10]);
+  const rotateY = useTransform(x, [-0.5, 0.5], [-10, 10]);
+  
+  const handleMouseMove = (event: React.MouseEvent) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    x.set((event.clientX - centerX) / rect.width);
+    y.set((event.clientY - centerY) / rect.height);
+  };
+  
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+  
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// Composant pour les particules flottantes
+function FloatingParticles() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {[...Array(20)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-2 h-2 bg-gradient-to-r from-pink-400 to-rose-400 rounded-full opacity-30"
+          initial={{
+            x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000),
+            y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800),
+          }}
+          animate={{
+            y: [null, -100, null],
+            x: [null, Math.random() * 100 - 50, null],
+            scale: [1, 1.5, 1],
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{
+            duration: 5 + Math.random() * 5,
+            repeat: Infinity,
+            delay: Math.random() * 3,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 export function Pricing() {
   const navigate = useNavigate();
@@ -129,184 +196,398 @@ export function Pricing() {
 
   const selectedPlanDetails = plans.find(p => p.id === selectedPlan);
 
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 relative overflow-hidden">
       <Header />
       
-      <main className="py-20">
+      {/* Background Elements */}
+      <FloatingParticles />
+      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-pink-200/30 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-rose-200/30 rounded-full blur-[100px] pointer-events-none" />
+      
+      <main className="py-20 relative z-10" ref={sectionRef}>
         {/* Header */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-16">
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-pink-100 to-rose-100 text-pink-700 px-5 py-2.5 rounded-full text-sm font-bold mb-6 shadow-lg shadow-pink-100/50">
-            <Star className="w-4 h-4" />
+        <motion.div 
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-16"
+          initial={{ opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+        >
+          <motion.div 
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-pink-100 to-rose-100 text-pink-700 px-5 py-2.5 rounded-full text-sm font-bold mb-6 shadow-lg shadow-pink-100/50"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={isInView ? { opacity: 1, scale: 1 } : {}}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            whileHover={{ scale: 1.05 }}
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+            >
+              <Star className="w-4 h-4" />
+            </motion.div>
             Choisissez votre plan
-          </div>
-          <h1 className="text-4xl md:text-6xl font-black text-slate-900 mb-6">
+          </motion.div>
+          <motion.h1 
+            className="text-4xl md:text-6xl font-black text-slate-900 mb-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
             Tarification{' '}
-            <span className="bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 bg-clip-text text-transparent">
+            <motion.span 
+              className="bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 bg-clip-text text-transparent inline-block"
+              initial={{ opacity: 0, x: -20 }}
+              animate={isInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
               Simple
-            </span>
-          </h1>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+            </motion.span>
+          </motion.h1>
+          <motion.p 
+            className="text-xl text-slate-600 max-w-2xl mx-auto"
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 1 } : {}}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
             Payez en crypto-monnaie via NowPayments. Bitcoin, Ethereum, USDT et +300 cryptos.
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
         {/* Plans */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-8">
-            {plans.map((plan) => {
+            {plans.map((plan, index) => {
               const Icon = plan.icon;
               const isCurrentPlan = user?.plan === plan.id && user?.subscriptionStatus === 'active';
               
               return (
-                <div
-                  key={plan.id}
-                  className={`relative bg-white rounded-3xl p-8 transition-all duration-500 hover:scale-[1.02] ${
-                    plan.popular 
-                      ? `ring-2 ring-pink-500 shadow-2xl ${plan.shadowColor}` 
-                      : 'shadow-xl hover:shadow-2xl'
-                  }`}
-                >
-                  {plan.popular && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
-                      ⭐ Plus populaire
-                    </div>
-                  )}
-
-                  {/* Plan Header */}
-                  <div className="text-center mb-8">
-                    <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r ${plan.color} text-white mb-4 shadow-xl`}>
-                      <Icon className="w-8 h-8" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-slate-900 mb-2">{plan.name}</h3>
-                    <p className="text-slate-500">{plan.description}</p>
-                  </div>
-
-                  {/* Price */}
-                  <div className="text-center mb-8">
-                    <div className="flex items-baseline justify-center">
-                      <span className="text-5xl font-black text-slate-900">${plan.price}</span>
-                      <span className="text-slate-500 ml-2">{plan.period}</span>
-                    </div>
-                  </div>
-
-                  {/* Features */}
-                  <ul className="space-y-4 mb-8">
-                    {plan.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start gap-3">
-                        <div className={`flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-r ${plan.color} flex items-center justify-center mt-0.5`}>
-                          <Check className="w-3 h-3 text-white" />
-                        </div>
-                        <span className="text-slate-600">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* CTA Button */}
-                  <button
-                    onClick={() => handleSelectPlan(plan.id)}
-                    disabled={isCurrentPlan}
-                    className={`w-full py-4 px-6 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${
-                      isCurrentPlan
-                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                        : plan.popular
-                          ? `bg-gradient-to-r ${plan.color} text-white hover:shadow-xl hover:scale-[1.02] ${plan.shadowColor}`
-                          : 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-xl'
+                <Card3D key={plan.id} className="perspective-1000">
+                  <motion.div
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ 
+                      duration: 0.6, 
+                      delay: 0.2 + index * 0.15,
+                      type: "spring",
+                      stiffness: 100
+                    }}
+                    whileHover={{ y: -10 }}
+                    className={`relative bg-white rounded-3xl p-8 transition-all duration-500 ${
+                      plan.popular 
+                        ? `ring-2 ring-pink-500 shadow-2xl ${plan.shadowColor}` 
+                        : 'shadow-xl hover:shadow-2xl'
                     }`}
+                    style={{ transformStyle: 'preserve-3d' }}
                   >
-                    {isCurrentPlan ? (
-                      <>
-                        <Check className="w-5 h-5" />
-                        Plan actuel
-                      </>
-                    ) : (
-                      <>
-                        <Wallet className="w-5 h-5" />
-                        Payer en Crypto
-                        <ArrowRight className="w-5 h-5" />
-                      </>
+                    {/* Shimmer Effect */}
+                    <motion.div
+                      className="absolute inset-0 rounded-3xl opacity-0 hover:opacity-100 transition-opacity duration-500"
+                      style={{
+                        background: 'linear-gradient(105deg, transparent 40%, rgba(236, 72, 153, 0.1) 45%, rgba(236, 72, 153, 0.2) 50%, rgba(236, 72, 153, 0.1) 55%, transparent 60%)',
+                        backgroundSize: '200% 100%',
+                      }}
+                      animate={{
+                        backgroundPosition: ['200% 0', '-200% 0'],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "linear"
+                      }}
+                    />
+
+                    {plan.popular && (
+                      <motion.div 
+                        className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg"
+                        initial={{ opacity: 0, y: -20, scale: 0.8 }}
+                        animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+                        transition={{ duration: 0.5, delay: 0.5 }}
+                        whileHover={{ scale: 1.1 }}
+                      >
+                        <motion.span
+                          animate={{ rotate: [0, 10, -10, 0] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                          className="inline-block mr-1"
+                        >
+                          ⭐
+                        </motion.span>
+                        Plus populaire
+                      </motion.div>
                     )}
-                  </button>
-                </div>
+
+                    {/* Plan Header */}
+                    <div className="text-center mb-8 relative" style={{ transform: 'translateZ(20px)' }}>
+                      <motion.div 
+                        className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r ${plan.color} text-white mb-4 shadow-xl relative`}
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                      >
+                        {/* Glow effect behind icon */}
+                        <motion.div
+                          className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${plan.color} blur-xl opacity-50`}
+                          animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
+                        <Icon className="w-8 h-8 relative z-10" />
+                      </motion.div>
+                      <h3 className="text-2xl font-bold text-slate-900 mb-2">{plan.name}</h3>
+                      <p className="text-slate-500">{plan.description}</p>
+                    </div>
+
+                    {/* Price */}
+                    <div className="text-center mb-8" style={{ transform: 'translateZ(30px)' }}>
+                      <motion.div 
+                        className="flex items-baseline justify-center"
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={isInView ? { opacity: 1, scale: 1 } : {}}
+                        transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}
+                      >
+                        <motion.span 
+                          className="text-5xl font-black text-slate-900"
+                          whileHover={{ scale: 1.1 }}
+                        >
+                          ${plan.price}
+                        </motion.span>
+                        <span className="text-slate-500 ml-2">{plan.period}</span>
+                      </motion.div>
+                    </div>
+
+                    {/* Features */}
+                    <ul className="space-y-4 mb-8" style={{ transform: 'translateZ(15px)' }}>
+                      {plan.features.map((feature, idx) => (
+                        <motion.li 
+                          key={idx} 
+                          className="flex items-start gap-3"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={isInView ? { opacity: 1, x: 0 } : {}}
+                          transition={{ duration: 0.4, delay: 0.5 + idx * 0.05 }}
+                          whileHover={{ x: 5 }}
+                        >
+                          <motion.div 
+                            className={`flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-r ${plan.color} flex items-center justify-center mt-0.5`}
+                            whileHover={{ scale: 1.2, rotate: 360 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <Check className="w-3 h-3 text-white" />
+                          </motion.div>
+                          <span className="text-slate-600">{feature}</span>
+                        </motion.li>
+                      ))}
+                    </ul>
+
+                    {/* CTA Button */}
+                    <motion.button
+                      onClick={() => handleSelectPlan(plan.id)}
+                      disabled={isCurrentPlan}
+                      className={`w-full py-4 px-6 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 relative overflow-hidden ${
+                        isCurrentPlan
+                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                          : plan.popular
+                            ? `bg-gradient-to-r ${plan.color} text-white shadow-xl ${plan.shadowColor}`
+                            : 'bg-slate-900 text-white hover:bg-slate-800'
+                      }`}
+                      whileHover={!isCurrentPlan ? { scale: 1.02, y: -2 } : {}}
+                      whileTap={!isCurrentPlan ? { scale: 0.98 } : {}}
+                      style={{ transform: 'translateZ(25px)' }}
+                    >
+                      {/* Shimmer on button */}
+                      {!isCurrentPlan && (
+                        <motion.div
+                          className="absolute inset-0 opacity-30"
+                          style={{
+                            background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.5) 50%, transparent 60%)',
+                            backgroundSize: '200% 100%',
+                          }}
+                          animate={{
+                            backgroundPosition: ['200% 0', '-200% 0'],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "linear"
+                          }}
+                        />
+                      )}
+                      {isCurrentPlan ? (
+                        <>
+                          <Check className="w-5 h-5" />
+                          Plan actuel
+                        </>
+                      ) : (
+                        <>
+                          <Wallet className="w-5 h-5" />
+                          Payer en Crypto
+                          <motion.div
+                            animate={{ x: [0, 5, 0] }}
+                            transition={{ duration: 1, repeat: Infinity }}
+                          >
+                            <ArrowRight className="w-5 h-5" />
+                          </motion.div>
+                        </>
+                      )}
+                    </motion.button>
+                  </motion.div>
+                </Card3D>
               );
             })}
           </div>
 
           {/* Trust badges - Crypto */}
-          <div className="mt-16 text-center">
-            <p className="text-slate-500 mb-6">+300 cryptos acceptées via NowPayments</p>
+          <motion.div 
+            className="mt-16 text-center"
+            initial={{ opacity: 0, y: 30 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            <motion.p 
+              className="text-slate-500 mb-6"
+              initial={{ opacity: 0 }}
+              animate={isInView ? { opacity: 1 } : {}}
+              transition={{ duration: 0.5, delay: 0.7 }}
+            >
+              <Sparkles className="w-4 h-4 inline mr-2 text-pink-500" />
+              +300 cryptos acceptées via NowPayments
+            </motion.p>
             <div className="inline-flex flex-wrap items-center justify-center gap-4">
-              {cryptoLogos.map((crypto) => (
-                <div 
+              {cryptoLogos.map((crypto, index) => (
+                <motion.div 
                   key={crypto.name}
-                  className="flex items-center gap-2 bg-white px-4 py-3 rounded-2xl shadow-lg border border-slate-100 hover:scale-105 transition-transform"
+                  className="flex items-center gap-2 bg-white px-4 py-3 rounded-2xl shadow-lg border border-slate-100 cursor-pointer"
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={isInView ? { opacity: 1, scale: 1, y: 0 } : {}}
+                  transition={{ duration: 0.4, delay: 0.8 + index * 0.1 }}
+                  whileHover={{ 
+                    scale: 1.1, 
+                    y: -5,
+                    boxShadow: `0 20px 40px -10px ${crypto.color}40`
+                  }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <div 
+                  <motion.div 
                     className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
                     style={{ backgroundColor: crypto.color }}
+                    whileHover={{ rotate: 360 }}
+                    transition={{ duration: 0.5 }}
                   >
                     {crypto.icon}
-                  </div>
+                  </motion.div>
                   <span className="text-slate-700 font-semibold">{crypto.name}</span>
-                </div>
+                </motion.div>
               ))}
             </div>
             
-            <div className="flex items-center justify-center gap-8 mt-8 text-slate-400">
-              <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                <span>Paiement sécurisé</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Lock className="w-5 h-5" />
-                <span>Blockchain vérifié</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Zap className="w-5 h-5" />
-                <span>Confirmation rapide</span>
-              </div>
-            </div>
+            <motion.div 
+              className="flex flex-wrap items-center justify-center gap-8 mt-8 text-slate-400"
+              initial={{ opacity: 0 }}
+              animate={isInView ? { opacity: 1 } : {}}
+              transition={{ duration: 0.5, delay: 1 }}
+            >
+              {[
+                { icon: Shield, text: 'Paiement sécurisé' },
+                { icon: Lock, text: 'Blockchain vérifié' },
+                { icon: Zap, text: 'Confirmation rapide' },
+              ].map((item, index) => (
+                <motion.div 
+                  key={item.text}
+                  className="flex items-center gap-2"
+                  whileHover={{ scale: 1.1, color: '#ec4899' }}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={isInView ? { opacity: 1, x: 0 } : {}}
+                  transition={{ duration: 0.4, delay: 1.1 + index * 0.1 }}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span>{item.text}</span>
+                </motion.div>
+              ))}
+            </motion.div>
 
             {/* NowPayments Badge */}
-            <div className="mt-8 flex justify-center">
-              <div className="inline-flex items-center gap-3 bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-3 rounded-2xl shadow-xl">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+            <motion.div 
+              className="mt-8 flex justify-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 1.3 }}
+            >
+              <motion.div 
+                className="inline-flex items-center gap-3 bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-3 rounded-2xl shadow-xl cursor-pointer relative overflow-hidden"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {/* Shimmer effect */}
+                <motion.div
+                  className="absolute inset-0 opacity-20"
+                  style={{
+                    background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.5) 50%, transparent 60%)',
+                    backgroundSize: '200% 100%',
+                  }}
+                  animate={{
+                    backgroundPosition: ['200% 0', '-200% 0'],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}
+                />
+                <motion.div 
+                  className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center"
+                  animate={{ rotate: [0, 360] }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                >
                   <span className="text-white font-black text-xs">NP</span>
-                </div>
-                <div className="text-left">
+                </motion.div>
+                <div className="text-left relative z-10">
                   <p className="text-white font-bold text-sm">Powered by NowPayments</p>
                   <p className="text-slate-400 text-xs">Paiements crypto sécurisés</p>
                 </div>
-              </div>
-            </div>
-          </div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
         </div>
       </main>
 
       <Footer />
 
       {/* Payment Modal with NowPayments Widget */}
-      {showPaymentModal && selectedPlanDetails && (
-        <div 
-          className="fixed inset-0 bg-black/90 backdrop-blur-lg z-50 flex items-center justify-center p-4"
-          onClick={(e) => e.target === e.currentTarget && handleCloseModal()}
-        >
-          {/* Bouton fermer VISIBLE EN HAUT À DROITE (Desktop uniquement) */}
-          <button
-            onClick={handleCloseModal}
-            className="hidden md:flex fixed top-6 right-6 z-[60] items-center gap-2 bg-white/10 hover:bg-white text-white hover:text-slate-900 px-5 py-3 rounded-full font-bold transition-all duration-300 hover:scale-105 border-2 border-white/30 hover:border-white shadow-2xl backdrop-blur-xl group"
+      <AnimatePresence>
+        {showPaymentModal && selectedPlanDetails && (
+          <motion.div 
+            className="fixed inset-0 bg-black/90 backdrop-blur-lg z-50 flex items-center justify-center p-4"
+            onClick={(e) => e.target === e.currentTarget && handleCloseModal()}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
           >
-            <X className="w-6 h-6 transition-transform group-hover:rotate-90" />
-            <span className="text-sm">Fermer</span>
-          </button>
+            {/* Bouton fermer VISIBLE EN HAUT À DROITE (Desktop uniquement) */}
+            <motion.button
+              onClick={handleCloseModal}
+              className="hidden md:flex fixed top-6 right-6 z-[60] items-center gap-2 bg-white/10 hover:bg-white text-white hover:text-slate-900 px-5 py-3 rounded-full font-bold transition-all duration-300 border-2 border-white/30 hover:border-white shadow-2xl backdrop-blur-xl group"
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 50 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <X className="w-6 h-6 transition-transform group-hover:rotate-90" />
+              <span className="text-sm">Fermer</span>
+            </motion.button>
 
-          <div 
-            className="bg-white rounded-3xl max-w-[480px] w-full shadow-2xl animate-in flex flex-col max-h-[90vh] md:max-h-none overflow-hidden"
-            style={{ 
-              transform: 'perspective(1000px)',
-              animation: 'slideUp 0.4s ease-out'
-            }}
-          >
+            <motion.div 
+              className="bg-white rounded-3xl max-w-[480px] w-full shadow-2xl flex flex-col max-h-[90vh] md:max-h-none overflow-hidden"
+              initial={{ opacity: 0, scale: 0.9, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 50 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              style={{ 
+                transformStyle: 'preserve-3d',
+              }}
+            >
             {/* Modal Header */}
             <div className={`bg-gradient-to-r ${selectedPlanDetails.color} p-6 text-white relative overflow-hidden`}>
               <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
@@ -423,9 +704,10 @@ export function Pricing() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
