@@ -8,12 +8,14 @@ services:
     region: frankfurt
     plan: free
     rootDir: server
-    buildCommand: npm install && cd .. && npm install && npm run build && cd server && npm run build:server
-    startCommand: npm start
+    buildCommand: chmod +x build.sh && bash build.sh
+    startCommand: node dist/server.js
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
       - key: JWT_SECRET
         generateValue: true
       - key: NOWPAYMENTS_IPN_SECRET

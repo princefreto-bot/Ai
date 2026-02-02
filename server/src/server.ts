@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
+import fs from 'fs';
 import { config } from './config';
 import { db } from './database';
 
@@ -57,22 +58,55 @@ app.use('/api/payment', paymentRoutes);
 // En production, servir les fichiers statiques du frontend buildé
 const frontendPath = path.join(__dirname, '../../dist');
 
-// Servir les fichiers statiques
-app.use(express.static(frontendPath));
+console.log('📂 Frontend path:', frontendPath);
 
-// Pour toutes les autres routes, servir index.html (SPA routing)
-app.get('*', (req, res) => {
-  // Ne pas rediriger les requêtes API
-  if (req.path.startsWith('/api/') || req.path === '/health') {
-    res.status(404).json({
-      success: false,
-      error: 'Endpoint not found',
-    });
-    return;
-  }
+// Vérifier si le dossier dist existe
+if (fs.existsSync(frontendPath)) {
+  console.log('✅ Frontend dist folder found');
   
-  res.sendFile(path.join(frontendPath, 'index.html'));
-});
+  // Servir les fichiers statiques
+  app.use(express.static(frontendPath));
+
+  // Pour toutes les autres routes, servir index.html (SPA routing)
+  app.get('*', (req, res) => {
+    // Ne pas rediriger les requêtes API
+    if (req.path.startsWith('/api/') || req.path === '/health') {
+      res.status(404).json({
+        success: false,
+        error: 'Endpoint not found',
+      });
+      return;
+    }
+    
+    const indexPath = path.join(frontendPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Frontend not built. Run npm run build first.',
+      });
+    }
+  });
+} else {
+  console.log('⚠️ Frontend dist folder not found. Only API available.');
+  
+  // Si pas de frontend, afficher un message
+  app.get('/', (req, res) => {
+    res.json({
+      success: true,
+      message: 'TradeScalpSnip API Server',
+      version: '1.0.0',
+      endpoints: {
+        health: '/health',
+        auth: '/api/auth',
+        analysis: '/api/analysis',
+        payment: '/api/payment',
+      },
+      note: 'Frontend not built. Run: npm run build',
+    });
+  });
+}
 
 // Error handler
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
