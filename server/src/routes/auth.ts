@@ -11,7 +11,7 @@ const router = Router();
 
 const generateToken = (userId: string, email: string): string => {
   const payload: AuthTokenPayload = { userId, email };
-  const options: SignOptions = { expiresIn: config.jwtExpiresIn };
+  const options: SignOptions = { expiresIn: config.jwtExpiresIn as any };
   return jwt.sign(payload, config.jwtSecret, options);
 };
 
