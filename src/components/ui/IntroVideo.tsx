@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import anime from 'animejs';
+import anime from 'animejs/lib/anime.es.js';
 
 interface IntroVideoProps {
   onComplete: () => void;
@@ -7,74 +7,54 @@ interface IntroVideoProps {
 
 const IntroVideo: React.FC<IntroVideoProps> = ({ onComplete }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  
-  // Fonction pour gérer l'entrée sur le site
-  const handleEnter = () => {
-    // Animation de sortie
-    anime({
-      targets: containerRef.current,
-      opacity: [1, 0],
-      duration: 1000,
-      easing: 'easeInOutQuad',
-      complete: () => {
-        onComplete();
-      }
-    });
-  };
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    // Animation d'entrée du contenu (bouton, texte)
+    // Animation d'entrée
     anime({
-      targets: contentRef.current,
+      targets: containerRef.current,
       opacity: [0, 1],
-      translateY: [20, 0],
-      duration: 1500,
-      delay: 500,
-      easing: 'easeOutExpo'
+      duration: 1000,
+      easing: 'easeOutQuad'
     });
+
+    // Fallback de sécurité : si la vidéo ne démarre pas ou est trop longue (max 10s)
+    const timeout = setTimeout(() => {
+        handleVideoEnd();
+    }, 10000); 
+
+    return () => clearTimeout(timeout);
   }, []);
+
+  const handleVideoEnd = () => {
+    // Animation de sortie avant de passer au site
+    anime({
+      targets: containerRef.current,
+      opacity: 0,
+      duration: 800,
+      easing: 'easeOutQuad',
+      complete: onComplete
+    });
+  };
 
   return (
     <div 
       ref={containerRef}
-      className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center overflow-hidden"
+      className="fixed inset-0 z-[100] bg-black flex items-center justify-center overflow-hidden"
     >
-      {/* Vidéo en arrière-plan */}
       <video
+        ref={videoRef}
         autoPlay
         muted
-        loop
         playsInline
-        className="absolute top-0 left-0 w-full h-full object-cover opacity-100"
+        onEnded={handleVideoEnd}
+        className="absolute top-0 left-0 w-full h-full object-cover"
       >
-        {/* Le fichier doit être placé dans public/intro.mp4 */}
         <source src="/intro.mp4" type="video/mp4" />
       </video>
 
-      {/* Overlay sombre pour la lisibilité */}
-      <div className="absolute inset-0 bg-black/40"></div>
-
-      {/* Contenu Central */}
-      <div ref={contentRef} className="relative z-10 flex flex-col items-center opacity-0">
-        
-        {/* Bouton Entrer */}
-        <button 
-          onClick={handleEnter}
-          className="group relative px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold uppercase tracking-widest text-sm rounded-none overflow-hidden transition-all duration-300 hover:bg-white/20 hover:border-white/50 hover:scale-105"
-        >
-          <span className="relative z-10 flex items-center gap-3">
-            Entrer sur TradeScalpSnip
-            <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-            </svg>
-          </span>
-          
-          {/* Effet de brillance au survol */}
-          <div className="absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-shimmer"></div>
-        </button>
-
-      </div>
+      {/* Overlay optionnel pour style cinématique */}
+      <div className="absolute inset-0 bg-black/10 pointer-events-none" />
     </div>
   );
 };

@@ -291,17 +291,17 @@ export function Pricing() {
           className="fixed inset-0 bg-black/90 backdrop-blur-lg z-50 flex items-center justify-center p-4"
           onClick={(e) => e.target === e.currentTarget && handleCloseModal()}
         >
-          {/* Bouton fermer VISIBLE EN HAUT À DROITE */}
+          {/* Bouton fermer VISIBLE EN HAUT À DROITE (Desktop uniquement) */}
           <button
             onClick={handleCloseModal}
-            className="fixed top-6 right-6 z-[60] flex items-center gap-2 bg-white/10 hover:bg-white text-white hover:text-slate-900 px-5 py-3 rounded-full font-bold transition-all duration-300 hover:scale-105 border-2 border-white/30 hover:border-white shadow-2xl backdrop-blur-xl group"
+            className="hidden md:flex fixed top-6 right-6 z-[60] items-center gap-2 bg-white/10 hover:bg-white text-white hover:text-slate-900 px-5 py-3 rounded-full font-bold transition-all duration-300 hover:scale-105 border-2 border-white/30 hover:border-white shadow-2xl backdrop-blur-xl group"
           >
             <X className="w-6 h-6 transition-transform group-hover:rotate-90" />
             <span className="text-sm">Fermer</span>
           </button>
 
           <div 
-            className="bg-white rounded-3xl max-w-[480px] w-full overflow-hidden shadow-2xl animate-in"
+            className="bg-white rounded-3xl max-w-[480px] w-full shadow-2xl animate-in flex flex-col max-h-[90vh] md:max-h-none overflow-hidden"
             style={{ 
               transform: 'perspective(1000px)',
               animation: 'slideUp 0.4s ease-out'
@@ -331,8 +331,8 @@ export function Pricing() {
               </div>
             </div>
 
-            {/* NowPayments Widget */}
-            <div className="p-4 bg-gradient-to-b from-slate-100 to-slate-50">
+            {/* NowPayments Widget Container Scrollable */}
+            <div className="p-4 bg-gradient-to-b from-slate-100 to-slate-50 overflow-y-auto custom-scrollbar">
               {/* Loading State */}
               {isWidgetLoading && (
                 <div className="flex flex-col items-center justify-center py-20">
@@ -364,24 +364,27 @@ export function Pricing() {
 
               {/* Widget Container */}
               <div className={`bg-white rounded-2xl overflow-hidden shadow-xl border border-slate-200 ${isWidgetLoading ? 'absolute opacity-0 pointer-events-none' : ''}`}>
-                <iframe 
-                  src={`https://nowpayments.io/embeds/payment-widget?iid=${selectedPlanDetails.widgetId}`}
-                  width="100%" 
-                  height="696" 
-                  frameBorder="0" 
-                  scrolling="no" 
-                  style={{ 
-                    overflowY: 'hidden',
-                    display: 'block',
-                    borderRadius: '16px'
-                  }}
-                  title="NowPayments Payment Widget"
-                  allow="payment"
-                  onLoad={handleWidgetLoad}
-                  onError={handleWidgetError}
-                >
-                  Impossible de charger le widget de paiement. Veuillez réessayer.
-                </iframe>
+                <div className="relative w-full overflow-hidden" style={{ minHeight: '600px' }}>
+                  <iframe 
+                    src={`https://nowpayments.io/embeds/payment-widget?iid=${selectedPlanDetails.widgetId}`}
+                    width="100%" 
+                    height="700"
+                    frameBorder="0" 
+                    scrolling="yes" 
+                    style={{ 
+                      overflowY: 'auto',
+                      display: 'block',
+                      borderRadius: '16px',
+                      minHeight: '600px'
+                    }}
+                    title="NowPayments Payment Widget"
+                    allow="payment"
+                    onLoad={handleWidgetLoad}
+                    onError={handleWidgetError}
+                  >
+                    Impossible de charger le widget de paiement. Veuillez réessayer.
+                  </iframe>
+                </div>
               </div>
               
               {/* Security Note */}
