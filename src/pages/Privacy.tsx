@@ -9,7 +9,7 @@ export function Privacy() {
       <main className="py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-4xl font-bold text-slate-900 mb-8">Politique de Confidentialité</h1>
-          <p className="text-slate-600 mb-8">Dernière mise à jour : Janvier 2024</p>
+          <p className="text-slate-600 mb-8">Dernière mise à jour : Janvier 2026</p>
 
           <div className="prose prose-slate max-w-none">
             <section className="mb-8">
@@ -29,7 +29,7 @@ export function Privacy() {
                 dont le siège social est situé à Paris, France.
               </p>
               <p className="text-slate-700 mt-2">
-                Contact DPO : privacy@tradevisionai.com
+                Contact DPO : privacy@tradescalpsnip.com
               </p>
             </section>
 
@@ -56,7 +56,7 @@ export function Privacy() {
 
               <h3 className="text-xl font-semibold text-slate-900 mb-2">3.3 Données de paiement</h3>
               <ul className="list-disc pl-6 text-slate-700 space-y-2">
-                <li>Informations de facturation (traitées par Stripe)</li>
+                <li>Informations de facturation (traitées par NowPayments)</li>
                 <li>Historique des transactions</li>
               </ul>
             </section>
@@ -108,7 +108,7 @@ export function Privacy() {
                 Nous pouvons partager vos données avec :
               </p>
               <ul className="list-disc pl-6 text-slate-700 space-y-2">
-                <li><strong>Stripe :</strong> traitement des paiements (certifié PCI-DSS)</li>
+                <li><strong>NowPayments :</strong> traitement des paiements en crypto-monnaies</li>
                 <li><strong>Hébergeurs :</strong> Render, AWS (serveurs sécurisés)</li>
                 <li><strong>Autorités :</strong> sur demande légale uniquement</li>
               </ul>
@@ -145,7 +145,7 @@ export function Privacy() {
                 <li><strong>Opposition :</strong> vous opposer à certains traitements</li>
               </ul>
               <p className="text-slate-700 mt-4">
-                Pour exercer ces droits, contactez-nous à : privacy@tradevisionai.com
+                Pour exercer ces droits, contactez-nous à : privacy@tradescalpsnip.com
               </p>
             </section>
 
@@ -181,7 +181,7 @@ export function Privacy() {
               <h2 className="text-2xl font-bold text-slate-900 mb-4">13. Contact</h2>
               <p className="text-slate-700">
                 Pour toute question relative à cette politique :<br />
-                Email : privacy@tradevisionai.com<br />
+                Email : privacy@tradescalpsnip.com<br />
                 Vous pouvez également déposer une réclamation auprès de la CNIL.
               </p>
             </section>

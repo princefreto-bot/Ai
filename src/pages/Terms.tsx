@@ -9,7 +9,7 @@ export function Terms() {
       <main className="py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-4xl font-bold text-slate-900 mb-8">Conditions Générales d'Utilisation</h1>
-          <p className="text-slate-600 mb-8">Dernière mise à jour : Janvier 2024</p>
+          <p className="text-slate-600 mb-8">Dernière mise à jour : Janvier 2026</p>
 
           <div className="prose prose-slate max-w-none">
             <section className="mb-8">
@@ -89,7 +89,7 @@ export function Terms() {
               <h2 className="text-2xl font-bold text-slate-900 mb-4">6. Abonnement et Paiement</h2>
               <p className="text-slate-700 mb-4">
                 Le Service propose différentes formules d'abonnement. Les paiements sont traités de manière sécurisée 
-                via Stripe. En souscrivant à un abonnement payant :
+                via NowPayments (paiement en crypto-monnaies). En souscrivant à un abonnement payant :
               </p>
               <ul className="list-disc pl-6 text-slate-700 space-y-2">
                 <li>Vous autorisez le prélèvement automatique mensuel</li>
@@ -133,7 +133,7 @@ export function Terms() {
             <section className="mb-8">
               <h2 className="text-2xl font-bold text-slate-900 mb-4">10. Contact</h2>
               <p className="text-slate-700">
-                Pour toute question concernant ces Conditions, contactez-nous à : legal@tradevisionai.com
+                Pour toute question concernant ces Conditions, contactez-nous à : legal@tradescalpsnip.com
               </p>
             </section>
           </div>

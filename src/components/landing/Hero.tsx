@@ -1,43 +1,98 @@
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { ArrowRight, Sparkles, TrendingUp, Shield, Zap, Star, CheckCircle } from 'lucide-react';
+// @ts-ignore
+import { animate, stagger } from 'animejs';
 
 export function Hero() {
+  const gridRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const leftContentRef = useRef<HTMLDivElement>(null);
+  const rightContentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // 1. Grid Animation (Anime.js style)
+    if (gridRef.current) {
+      const gridEl = gridRef.current;
+      gridEl.innerHTML = '';
+      
+      const width = gridEl.offsetWidth;
+      const height = gridEl.offsetHeight;
+      const cellSize = 60;
+      const cols = Math.ceil(width / cellSize);
+      const rows = Math.ceil(height / cellSize);
+      const total = cols * rows;
+
+      for (let i = 0; i < total; i++) {
+        const el = document.createElement('div');
+        el.style.width = `${cellSize}px`;
+        el.style.height = `${cellSize}px`;
+        el.style.position = 'absolute';
+        el.style.left = `${(i % cols) * cellSize}px`;
+        el.style.top = `${Math.floor(i / cols) * cellSize}px`;
+        el.style.border = '1px solid rgba(236, 72, 153, 0.05)';
+        el.style.opacity = '0';
+        gridEl.appendChild(el);
+      }
+
+      animate(gridEl.children, {
+        opacity: [0, 0.5, 0],
+        scale: [0, 1, 0],
+        delay: stagger(100, { grid: [cols, rows], from: 'center' }),
+        loop: true,
+        duration: 2000,
+        easing: 'inOutQuad'
+      });
+    }
+
+    // 2. Title Letterize Animation
+    if (titleRef.current) {
+      // We will animate the container elements instead to preserve the gradient span
+      if (leftContentRef.current?.children) {
+        animate(leftContentRef.current.children, {
+          translateX: [-50, 0],
+          opacity: [0, 1],
+          duration: 1200,
+          delay: stagger(150),
+          easing: 'outExpo'
+        });
+      }
+    }
+
+    // 3. Right side demo float
+    if (rightContentRef.current) {
+      animate(rightContentRef.current, {
+        translateY: [-20, 0],
+        opacity: [0, 1],
+        duration: 1500,
+        delay: 600,
+        easing: 'outElastic(1, .8)'
+      });
+    }
+
+  }, []);
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-white via-pink-50/30 to-white py-16 lg:py-24">
       {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Anime.js Grid */}
+        <div ref={gridRef} className="absolute inset-0 z-0" />
+
         {/* Gradient orbs */}
         <div className="absolute top-20 left-10 w-[500px] h-[500px] bg-gradient-to-br from-pink-400/20 to-rose-400/20 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-20 right-10 w-[600px] h-[600px] bg-gradient-to-br from-purple-400/15 to-pink-400/15 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-blue-400/10 to-cyan-400/10 rounded-full blur-3xl animate-pulse" />
-        
-        {/* Grid pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(236,72,153,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(236,72,153,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
-        
-        {/* Floating particles */}
-        {[...Array(6)].map((_, i) => (
-          <div 
-            key={i}
-            className="absolute w-2 h-2 bg-pink-400/40 rounded-full animate-float"
-            style={{
-              top: `${20 + i * 15}%`,
-              left: `${10 + i * 15}%`,
-              animationDelay: `${i * 0.5}s`,
-              animationDuration: `${4 + i}s`
-            }}
-          />
-        ))}
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left Content */}
-          <div>
+          <div ref={leftContentRef}>
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-pink-100 via-rose-50 to-pink-100 text-pink-700 px-5 py-2.5 rounded-full text-sm font-bold mb-6 shadow-lg shadow-pink-200/30 border border-pink-200/50">
               <Sparkles className="w-4 h-4 animate-pulse" />
-              <span>IA de Scalping #1 en 2024</span>
+              <span>IA de Scalping #1 en 2026</span>
               <div className="flex gap-0.5">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="w-3 h-3 fill-pink-400 text-pink-400" />
@@ -46,9 +101,9 @@ export function Hero() {
             </div>
 
             {/* Main heading */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1] mb-6">
+            <h1 ref={titleRef} className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1] mb-6">
               Analysez vos graphiques avec 
-              <span className="bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 bg-clip-text text-transparent"> l'IA la plus rapide</span>
+              <span className="bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 bg-clip-text text-transparent block mt-2"> l'IA la plus rapide</span>
             </h1>
 
             {/* Subheading */}
@@ -66,7 +121,7 @@ export function Hero() {
                 { text: 'TP1, TP2, TP3 calculés', icon: Zap },
                 { text: 'Score de confiance IA', icon: Star },
               ].map((item, index) => (
-                <div key={index} className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-xl px-4 py-3 shadow-sm border border-slate-100">
+                <div key={index} className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-xl px-4 py-3 shadow-sm border border-slate-100 transform hover:scale-105 transition-transform duration-300">
                   <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center shadow-md">
                     <item.icon className="w-4 h-4 text-white" />
                   </div>
@@ -109,9 +164,9 @@ export function Hero() {
           </div>
 
           {/* Right Side - Demo Preview */}
-          <div className="relative">
+          <div ref={rightContentRef} className="relative perspective-1000">
             {/* Main card */}
-            <div className="relative">
+            <div className="relative transform transition-transform duration-500 hover:rotate-y-12 hover:rotate-x-12 preserve-3d">
               {/* Glow effect */}
               <div className="absolute -inset-4 bg-gradient-to-r from-pink-500 via-rose-500 to-purple-500 rounded-[2rem] blur-2xl opacity-30 animate-pulse" />
               

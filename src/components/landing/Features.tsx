@@ -1,11 +1,14 @@
+import { useEffect, useRef } from 'react';
+// @ts-ignore
+import { animate, stagger } from 'animejs';
 import { 
   Eye, 
   TrendingUp, 
   BarChart3, 
   Zap, 
   Shield, 
-  Clock,
-  Target,
+  Clock, 
+  Target, 
   LineChart
 } from 'lucide-react';
 
@@ -69,10 +72,48 @@ const features = [
 ];
 
 export function Features() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Animate cards with stagger and spring
+            // Filter null values
+            const targets = cardsRef.current.filter(Boolean);
+            
+            if (targets.length > 0) {
+              animate(targets, {
+                translateY: [100, 0],
+                opacity: [0, 1],
+                scale: [0.8, 1],
+                delay: stagger(100),
+                duration: 1200,
+                easing: 'outElastic(1, .8)'
+              });
+            }
+            
+            // Unobserve after animation trigger
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section className="py-32 bg-gradient-to-b from-slate-50 via-white to-slate-50 relative overflow-hidden" id="features">
+    <section ref={sectionRef} className="py-32 bg-gradient-to-b from-slate-50 via-white to-slate-50 relative overflow-hidden" id="features">
       {/* Background decoration */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-0 w-[500px] h-[500px] bg-pink-100/50 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-0 w-[500px] h-[500px] bg-purple-100/50 rounded-full blur-3xl" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[size:60px_60px]" />
@@ -96,8 +137,9 @@ export function Features() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, index) => (
             <div 
-              key={index} 
-              className="group relative bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 transform hover:scale-105 hover:-translate-y-3 transition-all duration-500 hover:shadow-2xl cursor-default"
+              key={index}
+              ref={(el) => { cardsRef.current[index] = el; }}
+              className="group relative bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 opacity-0 transform translate-y-10 hover:translate-y-[-10px] transition-all duration-300 hover:shadow-2xl cursor-default"
             >
               {/* Hover glow */}
               <div className={`absolute -inset-0.5 bg-gradient-to-r ${feature.gradient} rounded-3xl blur opacity-0 group-hover:opacity-30 transition-opacity duration-500`} />

@@ -76,7 +76,7 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="mailto:contact@tradevisionai.com" className="hover:text-pink-400 transition-colors">
+                <a href="mailto:contact@tradescalpsnip.com" className="hover:text-pink-400 transition-colors">
                   Contact
                 </a>
               </li>
@@ -103,7 +103,7 @@ export function Footer() {
         <div className="border-t border-slate-800 mt-12 pt-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-slate-400 text-sm">
-              © 2024 TradeScalpSnip. Tous droits réservés.
+              © 2025-2026 TradeScalpSnip. Tous droits réservés.
             </p>
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2 text-slate-500 text-sm">
