@@ -2,8 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { ArrowRight, Sparkles, TrendingUp, Shield, Zap, Star, CheckCircle } from 'lucide-react';
-// @ts-ignore
-import { animate, stagger } from 'animejs';
+import anime from 'animejs';
 
 export function Hero() {
   const gridRef = useRef<HTMLDivElement>(null);
@@ -36,38 +35,38 @@ export function Hero() {
         gridEl.appendChild(el);
       }
 
-      animate(gridEl.children, {
+      anime({
+        targets: gridEl.children,
         opacity: [0, 0.5, 0],
         scale: [0, 1, 0],
-        delay: stagger(100, { grid: [cols, rows], from: 'center' }),
+        delay: anime.stagger(100, { grid: [cols, rows], from: 'center' }),
         loop: true,
         duration: 2000,
-        easing: 'inOutQuad'
+        easing: 'easeInOutQuad'
       });
     }
 
-    // 2. Title Letterize Animation
-    if (titleRef.current) {
-      // We will animate the container elements instead to preserve the gradient span
-      if (leftContentRef.current?.children) {
-        animate(leftContentRef.current.children, {
-          translateX: [-50, 0],
-          opacity: [0, 1],
-          duration: 1200,
-          delay: stagger(150),
-          easing: 'outExpo'
-        });
-      }
+    // 2. Left content animation
+    if (leftContentRef.current?.children) {
+      anime({
+        targets: leftContentRef.current.children,
+        translateX: [-50, 0],
+        opacity: [0, 1],
+        duration: 1200,
+        delay: anime.stagger(150),
+        easing: 'easeOutExpo'
+      });
     }
 
     // 3. Right side demo float
     if (rightContentRef.current) {
-      animate(rightContentRef.current, {
+      anime({
+        targets: rightContentRef.current,
         translateY: [-20, 0],
         opacity: [0, 1],
         duration: 1500,
         delay: 600,
-        easing: 'outElastic(1, .8)'
+        easing: 'easeOutElastic(1, .8)'
       });
     }
 

@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
-// @ts-ignore
-import { animate, stagger } from 'animejs';
+import anime from 'animejs';
 import { 
   Eye, 
   TrendingUp, 
@@ -85,13 +84,14 @@ export function Features() {
             const targets = cardsRef.current.filter(Boolean);
             
             if (targets.length > 0) {
-              animate(targets, {
+              anime({
+                targets: targets,
                 translateY: [100, 0],
                 opacity: [0, 1],
                 scale: [0.8, 1],
-                delay: stagger(100),
+                delay: anime.stagger(100),
                 duration: 1200,
-                easing: 'outElastic(1, .8)'
+                easing: 'easeOutElastic(1, .8)'
               });
             }
             
