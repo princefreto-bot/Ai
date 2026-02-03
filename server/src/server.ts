@@ -5,7 +5,7 @@ import morgan from 'morgan';
 import path from 'path';
 import fs from 'fs';
 import { config } from './config';
-import { db } from './database';
+import connectDB from './config/database';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -13,6 +13,9 @@ import analysisRoutes from './routes/analysis';
 import paymentRoutes from './routes/payment';
 
 const app = express();
+
+// Connect to MongoDB
+connectDB();
 
 // Security middleware (désactivé pour le CSP car on a un iframe NowPayments)
 app.use(helmet({
@@ -40,12 +43,14 @@ if (config.nodeEnv !== 'test') {
 }
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', async (_req, res) => {
+  const mongoose = await import('mongoose');
+  
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     environment: config.nodeEnv,
-    stats: db.getStats(),
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
   });
 });
 
@@ -92,7 +97,7 @@ if (fs.existsSync(frontendPath)) {
   console.log('⚠️ Frontend dist folder not found. Only API available.');
   
   // Si pas de frontend, afficher un message
-  app.get('/', (req, res) => {
+  app.get('/', (_req, res) => {
     res.json({
       success: true,
       message: 'TradeScalpSnip API Server',
@@ -109,7 +114,7 @@ if (fs.existsSync(frontendPath)) {
 }
 
 // Error handler
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Server error:', err);
   
   // Handle multer errors
@@ -140,6 +145,7 @@ app.listen(PORT, () => {
 ║                                                                    ║
 ║   Environment: ${config.nodeEnv.padEnd(47)}║
 ║   Port: ${String(PORT).padEnd(55)}║
+║   Database: MongoDB                                                ║
 ║                                                                    ║
 ║   Endpoints:                                                       ║
 ║   • Health:    http://localhost:${PORT}/health                        ║

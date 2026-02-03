@@ -1,8 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
 import { authMiddleware, subscriptionMiddleware } from '../middleware/auth';
 import { upload } from '../middleware/upload';
-import { db } from '../database';
+import { Analysis, User } from '../models';
 import { analysisService } from '../services/analysis';
 import { config } from '../config';
 
@@ -20,35 +19,81 @@ router.post(
       const file = req.file;
 
       if (!file) {
-        res.status(400).json({ success: false, error: 'Image file is required' });
+        res.status(400).json({ success: false, error: 'Une image est requise' });
         return;
       }
 
-      // Check limit for Pro users
-      if (req.user!.plan === 'pro') {
-        const analysisCount = await db.countUserAnalysesThisMonth(userId);
+      // Récupérer l'utilisateur
+      const user = await User.findById(userId);
+      if (!user) {
+        res.status(404).json({ success: false, error: 'Utilisateur non trouvé' });
+        return;
+      }
+
+      // Vérifier la limite pour les utilisateurs Pro
+      if (user.subscriptionPlan === 'pro') {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const analysisCount = await Analysis.countDocuments({
+          userId,
+          createdAt: { $gte: startOfMonth }
+        });
+
         if (analysisCount >= config.plans.pro.analysisLimit) {
           res.status(403).json({
             success: false,
-            error: 'Monthly analysis limit reached. Upgrade to Enterprise.',
-            code: 'LIMIT_REACHED',
+            error: 'Limite mensuelle atteinte. Passez à Enterprise.',
+            code: 'LIMIT_REACHED'
           });
           return;
         }
       }
 
-      const imageUrl = `/uploads/${uuidv4()}-${file.originalname}`;
-      const analysis = await analysisService.analyzeChart(file.buffer, userId, imageUrl);
-      await db.createAnalysis(analysis);
+      // Analyser le graphique
+      const analysisResult = await analysisService.analyzeChart(file.buffer);
+
+      // Sauvegarder l'analyse dans MongoDB
+      const analysis = new Analysis({
+        userId,
+        imageUrl: `/uploads/${Date.now()}-${file.originalname}`,
+        signal: analysisResult.signal,
+        confidence: analysisResult.confidence,
+        grade: analysisResult.grade,
+        entryZone: analysisResult.entryZone,
+        stopLoss: analysisResult.stopLoss,
+        takeProfit: analysisResult.takeProfit,
+        patterns: analysisResult.patterns,
+        explanation: analysisResult.explanation
+      });
+
+      await analysis.save();
+
+      // Mettre à jour le compteur d'analyses de l'utilisateur
+      await User.findByIdAndUpdate(userId, { $inc: { analysisCount: 1 } });
 
       res.json({
         success: true,
-        data: { analysis },
-        message: 'Analysis completed',
+        data: {
+          analysis: {
+            id: analysis._id,
+            signal: analysis.signal,
+            confidence: analysis.confidence,
+            grade: analysis.grade,
+            entryZone: analysis.entryZone,
+            stopLoss: analysis.stopLoss,
+            takeProfit: analysis.takeProfit,
+            patterns: analysis.patterns,
+            explanation: analysis.explanation,
+            createdAt: analysis.createdAt
+          }
+        },
+        message: 'Analyse terminée'
       });
     } catch (error) {
-      console.error('Analysis error:', error);
-      res.status(500).json({ success: false, error: 'Failed to analyze image' });
+      console.error('Erreur analyse:', error);
+      res.status(500).json({ success: false, error: 'Échec de l\'analyse' });
     }
   }
 );
@@ -58,11 +103,96 @@ router.get('/history', authMiddleware, async (req: Request, res: Response): Prom
   try {
     const userId = req.userId!;
     const limit = parseInt(req.query.limit as string) || 50;
-    const analyses = await db.getAnalysesByUserId(userId, limit);
-    res.json({ success: true, data: { analyses } });
+    const page = parseInt(req.query.page as string) || 1;
+    const skip = (page - 1) * limit;
+
+    const [analyses, total] = await Promise.all([
+      Analysis.find({ userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Analysis.countDocuments({ userId })
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        analyses: analyses.map(a => ({
+          id: a._id,
+          signal: a.signal,
+          confidence: a.confidence,
+          grade: a.grade,
+          entryZone: a.entryZone,
+          stopLoss: a.stopLoss,
+          takeProfit: a.takeProfit,
+          patterns: a.patterns,
+          explanation: a.explanation,
+          createdAt: a.createdAt
+        })),
+        pagination: {
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
   } catch (error) {
-    console.error('Get history error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get history' });
+    console.error('Erreur historique:', error);
+    res.status(500).json({ success: false, error: 'Échec de la récupération de l\'historique' });
+  }
+});
+
+// GET /api/analysis/stats/monthly
+router.get('/stats/monthly', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.userId!;
+
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    // Récupérer les stats du mois
+    const [totalAnalyses, signalStats, avgConfidenceResult, user] = await Promise.all([
+      Analysis.countDocuments({ userId, createdAt: { $gte: startOfMonth } }),
+      Analysis.aggregate([
+        { $match: { userId, createdAt: { $gte: startOfMonth } } },
+        { $group: { _id: '$signal', count: { $sum: 1 } } }
+      ]),
+      Analysis.aggregate([
+        { $match: { userId, createdAt: { $gte: startOfMonth } } },
+        { $group: { _id: null, avgConfidence: { $avg: '$confidence' } } }
+      ]),
+      User.findById(userId)
+    ]);
+
+    const signals = { buy: 0, sell: 0, wait: 0 };
+    signalStats.forEach((stat: any) => {
+      if (stat._id === 'BUY') signals.buy = stat.count;
+      if (stat._id === 'SELL') signals.sell = stat.count;
+      if (stat._id === 'WAIT') signals.wait = stat.count;
+    });
+
+    const avgConfidence = avgConfidenceResult.length > 0
+      ? Math.round(avgConfidenceResult[0].avgConfidence)
+      : 0;
+
+    const limit = user?.subscriptionPlan === 'pro' ? config.plans.pro.analysisLimit : -1;
+
+    res.json({
+      success: true,
+      data: {
+        totalAnalyses,
+        limit,
+        remaining: limit === -1 ? -1 : Math.max(0, limit - totalAnalyses),
+        signals,
+        avgConfidence
+      }
+    });
+  } catch (error) {
+    console.error('Erreur stats:', error);
+    res.status(500).json({ success: false, error: 'Échec de la récupération des stats' });
   }
 });
 
@@ -72,61 +202,65 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response): Promise<
     const userId = req.userId!;
     const analysisId = req.params.id;
 
-    const analysis = await db.getAnalysisById(analysisId);
+    const analysis = await Analysis.findById(analysisId).lean();
 
     if (!analysis) {
-      res.status(404).json({ success: false, error: 'Analysis not found' });
+      res.status(404).json({ success: false, error: 'Analyse non trouvée' });
       return;
     }
 
-    if (analysis.userId !== userId) {
-      res.status(403).json({ success: false, error: 'Access denied' });
+    if (analysis.userId.toString() !== userId) {
+      res.status(403).json({ success: false, error: 'Accès refusé' });
       return;
     }
-
-    res.json({ success: true, data: { analysis } });
-  } catch (error) {
-    console.error('Get analysis error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get analysis' });
-  }
-});
-
-// GET /api/analysis/stats/monthly
-router.get('/stats/monthly', authMiddleware, async (req: Request, res: Response): Promise<void> => {
-  try {
-    const userId = req.userId!;
-    const analysisCount = await db.countUserAnalysesThisMonth(userId);
-    const analyses = await db.getAnalysesByUserId(userId, 100);
-    
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-
-    const thisMonthAnalyses = analyses.filter(a => a.createdAt >= startOfMonth);
-
-    const buySignals = thisMonthAnalyses.filter(a => a.signal === 'BUY').length;
-    const sellSignals = thisMonthAnalyses.filter(a => a.signal === 'SELL').length;
-    const waitSignals = thisMonthAnalyses.filter(a => a.signal === 'WAIT').length;
-    
-    const avgConfidence = thisMonthAnalyses.length > 0
-      ? Math.round(thisMonthAnalyses.reduce((sum, a) => sum + a.confidence, 0) / thisMonthAnalyses.length)
-      : 0;
-
-    const limit = req.user!.plan === 'pro' ? config.plans.pro.analysisLimit : -1;
 
     res.json({
       success: true,
       data: {
-        totalAnalyses: analysisCount,
-        limit,
-        remaining: limit === -1 ? -1 : Math.max(0, limit - analysisCount),
-        signals: { buy: buySignals, sell: sellSignals, wait: waitSignals },
-        avgConfidence,
-      },
+        analysis: {
+          id: analysis._id,
+          signal: analysis.signal,
+          confidence: analysis.confidence,
+          grade: analysis.grade,
+          entryZone: analysis.entryZone,
+          stopLoss: analysis.stopLoss,
+          takeProfit: analysis.takeProfit,
+          patterns: analysis.patterns,
+          explanation: analysis.explanation,
+          createdAt: analysis.createdAt
+        }
+      }
     });
   } catch (error) {
-    console.error('Get stats error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get stats' });
+    console.error('Erreur récupération analyse:', error);
+    res.status(500).json({ success: false, error: 'Échec de la récupération de l\'analyse' });
+  }
+});
+
+// DELETE /api/analysis/:id
+router.delete('/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.userId!;
+    const analysisId = req.params.id;
+
+    const analysis = await Analysis.findById(analysisId);
+
+    if (!analysis) {
+      res.status(404).json({ success: false, error: 'Analyse non trouvée' });
+      return;
+    }
+
+    if (analysis.userId.toString() !== userId) {
+      res.status(403).json({ success: false, error: 'Accès refusé' });
+      return;
+    }
+
+    await Analysis.findByIdAndDelete(analysisId);
+
+    res.json({ success: true, message: 'Analyse supprimée' });
+  } catch (error) {
+    console.error('Erreur suppression analyse:', error);
+    res.status(500).json({ success: false, error: 'Échec de la suppression' });
   }
 });
 

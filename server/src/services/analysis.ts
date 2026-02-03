@@ -1,8 +1,20 @@
-import { v4 as uuidv4 } from 'uuid';
 import sharp from 'sharp';
-import { Analysis, Signal, SetupGrade, TakeProfit } from '../types';
 
 // Service d'analyse IA simulé (à remplacer par un vrai modèle ML en production)
+
+type Signal = 'BUY' | 'SELL' | 'WAIT';
+type SetupGrade = 'A+' | 'A' | 'B' | 'C';
+
+interface AnalysisResult {
+  signal: Signal;
+  confidence: number;
+  grade: SetupGrade;
+  entryZone: { min: number; max: number };
+  stopLoss: number;
+  takeProfit: { tp1: number; tp2: number; tp3: number };
+  patterns: string[];
+  explanation: string;
+}
 
 const PATTERNS = {
   bullish: [
@@ -23,19 +35,19 @@ const PATTERNS = {
 
 const EXPLANATIONS = {
   BUY: [
-    'Strong bullish momentum detected with multiple confluent signals. Price action shows clear support bounce with increasing volume. RSI indicates oversold conditions recovering.',
-    'Technical analysis reveals ascending structure with higher lows. MACD histogram turning positive with bullish crossover imminent.',
-    'Chart pattern confirmed with breakout above key resistance. Fibonacci retracement shows 61.8% level holding as support.',
+    'Momentum haussier fort détecté avec plusieurs signaux confluents. Le price action montre un rebond clair sur support avec volume croissant. RSI indique des conditions de survente en récupération.',
+    'L\'analyse technique révèle une structure ascendante avec des plus bas croissants. L\'histogramme MACD devient positif avec un crossover haussier imminent.',
+    'Pattern graphique confirmé avec cassure au-dessus de la résistance clé. Le retracement Fibonacci montre le niveau 61.8% tenant comme support.',
   ],
   SELL: [
-    'Bearish reversal pattern identified at major resistance. Volume declining on rallies indicates distribution. RSI showing overbought divergence.',
-    'Head and shoulders pattern completing with neckline test. Volume confirms distribution phase. Risk/reward favors short position.',
-    'Trend exhaustion signals present. Price failing to make new highs with momentum divergence.',
+    'Pattern de retournement baissier identifié sur résistance majeure. Volume en baisse sur les rallyes indique une distribution. RSI montre une divergence de surachat.',
+    'Pattern tête-épaules se complétant avec test de la ligne de cou. Le volume confirme une phase de distribution. Ratio risque/récompense favorable pour position short.',
+    'Signaux d\'épuisement de tendance présents. Le prix échoue à faire de nouveaux sommets avec divergence de momentum.',
   ],
   WAIT: [
-    'Market in consolidation phase. No clear directional bias detected. Recommend waiting for breakout confirmation.',
-    'Mixed signals across timeframes. Volume below average suggests low conviction. Better setups likely to emerge.',
-    'Choppy price action with no defined trend. Risk of false breakouts high. Patience recommended.',
+    'Marché en phase de consolidation. Aucun biais directionnel clair détecté. Recommandation d\'attendre une confirmation de cassure.',
+    'Signaux mixtes sur différentes timeframes. Volume en dessous de la moyenne suggère faible conviction. De meilleurs setups vont probablement émerger.',
+    'Price action chaotique sans tendance définie. Risque élevé de fausses cassures. Patience recommandée.',
   ],
 };
 
@@ -50,36 +62,16 @@ class AnalysisService {
     };
   }
 
-  async analyzeChart(imageBuffer: Buffer, userId: string, imageUrl: string): Promise<Analysis> {
+  async analyzeChart(imageBuffer: Buffer): Promise<AnalysisResult> {
     const metadata = await this.processImage(imageBuffer);
     
-    // Simuler le temps de traitement
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+    // Simuler le temps de traitement IA
+    await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 2000));
     
-    const result = this.generateAnalysisResult(metadata);
-    
-    const analysis: Analysis = {
-      id: uuidv4(),
-      userId,
-      imageUrl,
-      signal: result.signal,
-      confidence: result.confidence,
-      grade: result.grade,
-      entryZone: result.entryZone,
-      stopLoss: result.stopLoss,
-      takeProfits: result.takeProfits,
-      patterns: result.patterns,
-      explanation: result.explanation,
-      trend: result.trend,
-      momentum: result.momentum,
-      supportResistance: result.supportResistance,
-      createdAt: new Date(),
-    };
-    
-    return analysis;
+    return this.generateAnalysisResult(metadata);
   }
 
-  private generateAnalysisResult(metadata: { width: number; height: number; size: number }) {
+  private generateAnalysisResult(metadata: { width: number; height: number; size: number }): AnalysisResult {
     const seed = (metadata.width * metadata.height + metadata.size) % 100;
     
     let signal: Signal;
@@ -113,25 +105,25 @@ class AnalysisService {
     };
     
     let stopLoss: number;
-    let takeProfits: TakeProfit[];
+    let takeProfit: { tp1: number; tp2: number; tp3: number };
     
     if (signal === 'BUY') {
       stopLoss = Math.round(entryZone.min - volatility * 1.5);
-      takeProfits = [
-        { level: 1, price: Math.round(entryZone.max + volatility), percentage: 2.5 },
-        { level: 2, price: Math.round(entryZone.max + volatility * 2), percentage: 5 },
-        { level: 3, price: Math.round(entryZone.max + volatility * 3.5), percentage: 8.75 },
-      ];
+      takeProfit = {
+        tp1: Math.round(entryZone.max + volatility),
+        tp2: Math.round(entryZone.max + volatility * 2),
+        tp3: Math.round(entryZone.max + volatility * 3.5),
+      };
     } else if (signal === 'SELL') {
       stopLoss = Math.round(entryZone.max + volatility * 1.5);
-      takeProfits = [
-        { level: 1, price: Math.round(entryZone.min - volatility), percentage: 2.5 },
-        { level: 2, price: Math.round(entryZone.min - volatility * 2), percentage: 5 },
-        { level: 3, price: Math.round(entryZone.min - volatility * 3.5), percentage: 8.75 },
-      ];
+      takeProfit = {
+        tp1: Math.round(entryZone.min - volatility),
+        tp2: Math.round(entryZone.min - volatility * 2),
+        tp3: Math.round(entryZone.min - volatility * 3.5),
+      };
     } else {
       stopLoss = 0;
-      takeProfits = [];
+      takeProfit = { tp1: 0, tp2: 0, tp3: 0 };
     }
     
     const patternPool = signal === 'BUY' ? PATTERNS.bullish : signal === 'SELL' ? PATTERNS.bearish : PATTERNS.neutral;
@@ -141,34 +133,15 @@ class AnalysisService {
     const explanations = EXPLANATIONS[signal];
     const explanation = explanations[Math.floor(Math.random() * explanations.length)];
     
-    const momentumValue = Math.random();
-    const momentum: 'strong' | 'moderate' | 'weak' = 
-      momentumValue > 0.7 ? 'strong' : momentumValue > 0.3 ? 'moderate' : 'weak';
-    
-    const supports = [
-      Math.round(basePrice - volatility * 2),
-      Math.round(basePrice - volatility * 4),
-      Math.round(basePrice - volatility * 6),
-    ];
-    
-    const resistances = [
-      Math.round(basePrice + volatility * 2),
-      Math.round(basePrice + volatility * 4),
-      Math.round(basePrice + volatility * 6),
-    ];
-    
     return {
       signal,
       confidence,
       grade,
       entryZone,
       stopLoss,
-      takeProfits,
+      takeProfit,
       patterns,
       explanation,
-      trend,
-      momentum,
-      supportResistance: { supports, resistances },
     };
   }
 }

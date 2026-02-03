@@ -1,13 +1,15 @@
 import { Router, Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config';
-import { db } from '../database';
+import { User } from '../models';
 import { authMiddleware } from '../middleware/auth';
-import { User, AuthTokenPayload } from '../types';
 
 const router = Router();
+
+interface AuthTokenPayload {
+  userId: string;
+  email: string;
+}
 
 const generateToken = (userId: string, email: string): string => {
   const payload: AuthTokenPayload = { userId, email };
@@ -21,53 +23,63 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     const { email, password, name } = req.body;
 
     if (!email || !password || !name) {
-      res.status(400).json({ success: false, error: 'Email, password, and name are required' });
+      res.status(400).json({ success: false, error: 'Email, mot de passe et nom sont requis' });
       return;
     }
 
-    if (password.length < 8) {
-      res.status(400).json({ success: false, error: 'Password must be at least 8 characters' });
+    if (password.length < 6) {
+      res.status(400).json({ success: false, error: 'Le mot de passe doit contenir au moins 6 caractères' });
       return;
     }
 
-    const existingUser = await db.getUserByEmail(email);
+    // Vérifier si l'email existe déjà
+    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {
-      res.status(409).json({ success: false, error: 'Email already registered' });
+      res.status(409).json({ success: false, error: 'Cet email est déjà enregistré' });
       return;
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    const user: User = {
-      id: uuidv4(),
+    // Créer le nouvel utilisateur (le mot de passe sera hashé automatiquement)
+    const user = new User({
       email: email.toLowerCase().trim(),
-      password: hashedPassword,
+      password,
       name: name.trim(),
-      plan: 'none',
-      subscriptionStatus: 'inactive',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+      isSubscribed: false,
+      subscriptionPlan: 'free',
+      analysisCount: 0,
+      maxAnalysis: 0
+    });
 
-    await db.createUser(user);
-    const token = generateToken(user.id, user.email);
+    await user.save();
+
+    const token = generateToken(user._id.toString(), user.email);
 
     res.status(201).json({
       success: true,
       data: {
         user: {
-          id: user.id,
+          id: user._id,
           email: user.email,
           name: user.name,
-          plan: user.plan,
-          subscriptionStatus: user.subscriptionStatus,
+          isSubscribed: user.isSubscribed,
+          subscriptionPlan: user.subscriptionPlan,
+          analysisCount: user.analysisCount,
+          maxAnalysis: user.maxAnalysis
         },
-        token,
-      },
+        token
+      }
     });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ success: false, error: 'Failed to create account' });
+  } catch (error: any) {
+    console.error('Erreur inscription:', error);
+    
+    // Gestion des erreurs de validation Mongoose
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map((e: any) => e.message);
+      res.status(400).json({ success: false, error: messages.join(', ') });
+      return;
+    }
+    
+    res.status(500).json({ success: false, error: 'Échec de la création du compte' });
   }
 });
 
@@ -77,72 +89,115 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(400).json({ success: false, error: 'Email and password are required' });
+      res.status(400).json({ success: false, error: 'Email et mot de passe requis' });
       return;
     }
 
-    const user = await db.getUserByEmail(email);
+    // Trouver l'utilisateur
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
-      res.status(401).json({ success: false, error: 'Invalid email or password' });
+      res.status(401).json({ success: false, error: 'Email ou mot de passe invalide' });
       return;
     }
 
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    // Vérifier le mot de passe
+    const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
-      res.status(401).json({ success: false, error: 'Invalid email or password' });
+      res.status(401).json({ success: false, error: 'Email ou mot de passe invalide' });
       return;
     }
 
-    // Check subscription expiry
-    if (user.subscriptionStatus === 'active' && user.subscriptionEndDate) {
+    // Vérifier si l'abonnement a expiré
+    if (user.isSubscribed && user.subscriptionEndDate) {
       if (new Date(user.subscriptionEndDate) < new Date()) {
-        await db.updateUser(user.id, { subscriptionStatus: 'inactive' });
-        user.subscriptionStatus = 'inactive';
+        user.isSubscribed = false;
+        user.subscriptionPlan = 'free';
+        await user.save();
       }
     }
 
-    const token = generateToken(user.id, user.email);
+    const token = generateToken(user._id.toString(), user.email);
 
     res.json({
       success: true,
       data: {
         user: {
-          id: user.id,
+          id: user._id,
           email: user.email,
           name: user.name,
-          plan: user.plan,
-          subscriptionStatus: user.subscriptionStatus,
+          isSubscribed: user.isSubscribed,
+          subscriptionPlan: user.subscriptionPlan,
           subscriptionEndDate: user.subscriptionEndDate,
+          analysisCount: user.analysisCount,
+          maxAnalysis: user.maxAnalysis
         },
-        token,
-      },
+        token
+      }
     });
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ success: false, error: 'Failed to login' });
+    console.error('Erreur connexion:', error);
+    res.status(500).json({ success: false, error: 'Échec de la connexion' });
   }
 });
 
 // GET /api/auth/me
 router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<void> => {
-  res.json({ success: true, data: { user: req.user } });
+  try {
+    const user = await User.findById(req.userId).select('-password');
+    
+    if (!user) {
+      res.status(404).json({ success: false, error: 'Utilisateur non trouvé' });
+      return;
+    }
+
+    // Vérifier si l'abonnement a expiré
+    if (user.isSubscribed && user.subscriptionEndDate) {
+      if (new Date(user.subscriptionEndDate) < new Date()) {
+        user.isSubscribed = false;
+        user.subscriptionPlan = 'free';
+        await user.save();
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+          isSubscribed: user.isSubscribed,
+          subscriptionPlan: user.subscriptionPlan,
+          subscriptionEndDate: user.subscriptionEndDate,
+          analysisCount: user.analysisCount,
+          maxAnalysis: user.maxAnalysis
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Erreur récupération profil:', error);
+    res.status(500).json({ success: false, error: 'Échec de la récupération du profil' });
+  }
 });
 
 // PUT /api/auth/profile
 router.put('/profile', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { name } = req.body;
-    const userId = req.userId!;
 
     if (!name || name.trim().length === 0) {
-      res.status(400).json({ success: false, error: 'Name is required' });
+      res.status(400).json({ success: false, error: 'Le nom est requis' });
       return;
     }
 
-    const updatedUser = await db.updateUser(userId, { name: name.trim() });
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { name: name.trim(), updatedAt: new Date() },
+      { new: true }
+    ).select('-password');
 
-    if (!updatedUser) {
-      res.status(404).json({ success: false, error: 'User not found' });
+    if (!user) {
+      res.status(404).json({ success: false, error: 'Utilisateur non trouvé' });
       return;
     }
 
@@ -150,17 +205,54 @@ router.put('/profile', authMiddleware, async (req: Request, res: Response): Prom
       success: true,
       data: {
         user: {
-          id: updatedUser.id,
-          email: updatedUser.email,
-          name: updatedUser.name,
-          plan: updatedUser.plan,
-          subscriptionStatus: updatedUser.subscriptionStatus,
-        },
-      },
+          id: user._id,
+          email: user.email,
+          name: user.name,
+          isSubscribed: user.isSubscribed,
+          subscriptionPlan: user.subscriptionPlan
+        }
+      }
     });
   } catch (error) {
-    console.error('Update profile error:', error);
-    res.status(500).json({ success: false, error: 'Failed to update profile' });
+    console.error('Erreur mise à jour profil:', error);
+    res.status(500).json({ success: false, error: 'Échec de la mise à jour du profil' });
+  }
+});
+
+// PUT /api/auth/password
+router.put('/password', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ success: false, error: 'Mot de passe actuel et nouveau requis' });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      res.status(400).json({ success: false, error: 'Le nouveau mot de passe doit contenir au moins 6 caractères' });
+      return;
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      res.status(404).json({ success: false, error: 'Utilisateur non trouvé' });
+      return;
+    }
+
+    const isValidPassword = await user.comparePassword(currentPassword);
+    if (!isValidPassword) {
+      res.status(401).json({ success: false, error: 'Mot de passe actuel incorrect' });
+      return;
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ success: true, message: 'Mot de passe mis à jour avec succès' });
+  } catch (error) {
+    console.error('Erreur changement mot de passe:', error);
+    res.status(500).json({ success: false, error: 'Échec du changement de mot de passe' });
   }
 });
 
