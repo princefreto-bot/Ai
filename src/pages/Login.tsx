@@ -341,6 +341,9 @@ export function Login() {
                     <ArrowRight className="w-4 h-4" />
                   </motion.span>
                 </Link>
+                <div className="mt-6 text-xs text-slate-500">
+                  Accès administrateur: utilisez <span className="font-semibold text-slate-700">admin@tradescalpsnip.com</span> et votre mot de passe admin configuré dans Render.
+                </div>
               </motion.div>
             </div>
           </Card>

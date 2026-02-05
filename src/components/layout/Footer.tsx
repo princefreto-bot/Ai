@@ -49,8 +49,7 @@ export function Footer() {
 
   const legalLinks = [
     { label: "Conditions d'utilisation", href: '/terms' },
-    { label: 'Politique de confidentialité', href: '/privacy' },
-    { label: 'Administration', href: '/admin' },
+    { label: 'Politique de confidentialité', href: '/privacy' }
   ];
 
   return (

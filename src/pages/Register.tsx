@@ -481,6 +481,9 @@ export function Register() {
                       <ArrowRight className="w-4 h-4" />
                     </motion.span>
                   </Link>
+                  <div className="mt-6 text-xs text-slate-500">
+                    Compte admin déjà créé automatiquement. Connectez-vous avec <span className="font-semibold text-slate-700">admin@tradescalpsnip.com</span>.
+                  </div>
                 </motion.div>
               </div>
             </Card>
