@@ -11,6 +11,8 @@ import connectDB from './config/database';
 import authRoutes from './routes/auth';
 import analysisRoutes from './routes/analysis';
 import paymentRoutes from './routes/payment';
+import adminRoutes from './routes/admin';
+import contactRoutes from './routes/contact';
 
 const app = express();
 
@@ -58,6 +60,8 @@ app.get('/health', async (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/contact', contactRoutes);
 
 // ==================== SERVE FRONTEND ====================
 // En production, servir les fichiers statiques du frontend buildé

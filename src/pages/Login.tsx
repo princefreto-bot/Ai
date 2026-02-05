@@ -27,6 +27,7 @@ export function Login() {
       id: 'demo-' + Date.now(),
       email: email,
       name: email.split('@')[0],
+      role: 'user' as const,
       plan: 'none' as const,
       subscriptionStatus: 'inactive' as const,
       isSubscribed: false,

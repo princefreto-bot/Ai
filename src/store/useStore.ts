@@ -5,6 +5,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  role: 'user' | 'admin';
   plan: 'none' | 'pro' | 'enterprise';
   subscriptionStatus: 'inactive' | 'active' | 'cancelled';
   subscriptionEndDate?: string;

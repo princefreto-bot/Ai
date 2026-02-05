@@ -28,6 +28,7 @@ export function Register() {
       id: 'user-' + Date.now(),
       email: email,
       name: name,
+      role: 'user' as const,
       plan: 'none' as const,
       subscriptionStatus: 'inactive' as const,
       isSubscribed: false,

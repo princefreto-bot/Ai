@@ -36,19 +36,21 @@ export function Footer() {
 
   const productLinks = [
     { label: 'Fonctionnalités', href: '/#features' },
+    { label: 'Preuves de Gains', href: '/testimonials' },
     { label: 'Tarifs', href: '/pricing' },
     { label: 'Dashboard', href: '/dashboard' },
   ];
 
   const companyLinks = [
-    { label: 'À propos', href: '#' },
-    { label: 'Blog', href: '#' },
-    { label: 'Contact', href: 'mailto:contact@tradescalpsnip.com' },
+    { label: 'Enquêtes / Blog', href: '/articles' },
+    { label: 'Contact', href: '/contact' },
+    { label: 'Support 24/7', href: '/contact' },
   ];
 
   const legalLinks = [
     { label: "Conditions d'utilisation", href: '/terms' },
     { label: 'Politique de confidentialité', href: '/privacy' },
+    { label: 'Administration', href: '/admin' },
   ];
 
   return (
@@ -157,7 +159,7 @@ export function Footer() {
                 >
                   <Link 
                     to={link.href} 
-                    className="text-slate-400 hover:text-pink-400 transition-colors flex items-center gap-2 group"
+                    className={`transition-colors flex items-center gap-2 group ${link.label.includes('Preuves') ? 'text-green-400 font-bold hover:text-green-300' : 'text-slate-400 hover:text-pink-400'}`}
                   >
                     {link.label}
                     <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -183,13 +185,13 @@ export function Footer() {
                   key={index}
                   whileHover={{ x: 5 }}
                 >
-                  <a 
-                    href={link.href}
+                  <Link 
+                    to={link.href}
                     className="text-slate-400 hover:text-pink-400 transition-colors flex items-center gap-2 group"
                   >
                     {link.label}
                     <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </a>
+                  </Link>
                 </motion.li>
               ))}
             </ul>
@@ -213,7 +215,7 @@ export function Footer() {
                 >
                   <Link 
                     to={link.href}
-                    className="text-slate-400 hover:text-pink-400 transition-colors flex items-center gap-2 group"
+                    className={`transition-colors flex items-center gap-2 group ${link.label === 'Administration' ? 'opacity-30 hover:opacity-100 text-xs' : 'text-slate-400 hover:text-pink-400'}`}
                   >
                     {link.label}
                     <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />

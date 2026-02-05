@@ -10,7 +10,9 @@
     "build:server": "tsc",
     "build": "npm run build:client && npm run build:server",
     "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:reset": "tsx src/scripts/resetDb.ts",
+    "db:reset:prod": "node dist/scripts/resetDb.js"
   },
   "dependencies": {
     "express": "^4.18.2",
