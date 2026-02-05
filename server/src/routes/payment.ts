@@ -16,7 +16,7 @@ const verifyIPNSignature = (payload: string, signature: string): boolean => {
 };
 
 // Activer l'abonnement utilisateur
-const activateSubscription = async (userId: string, plan: 'pro' | 'enterprise'): Promise<void> => {
+const activateSubscription = async (userId: string, plan: 'pro' | 'enterprise' | 'custom'): Promise<void> => {
   const endDate = new Date();
   endDate.setMonth(endDate.getMonth() + 1); // +1 mois
 
@@ -212,12 +212,12 @@ router.post('/create', authMiddleware, async (req: Request, res: Response): Prom
     const userId = req.userId!;
     const { plan, cryptoCurrency } = req.body;
 
-    if (!plan || !['pro', 'enterprise'].includes(plan)) {
+    if (!plan || !['pro', 'enterprise', 'custom'].includes(plan)) {
       res.status(400).json({ success: false, error: 'Plan invalide' });
       return;
     }
 
-    const amount = plan === 'pro' ? config.plans.pro.price : config.plans.enterprise.price;
+    const amount = plan === 'pro' ? config.plans.pro.price : plan === 'enterprise' ? config.plans.enterprise.price : config.plans.custom.price;
     const paymentId = `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const orderId = `ORD-${Date.now()}`;
 

@@ -21,16 +21,46 @@ export function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name })
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        const apiUser = json.data.user as any;
+        const token = json.data.token as string;
+
+        const mappedUser = {
+          id: String(apiUser.id || apiUser._id || ''),
+          email: apiUser.email,
+          name: apiUser.name,
+          role: (apiUser.role || 'user') as 'user' | 'admin',
+          plan: (apiUser.subscriptionPlan === 'enterprise' ? 'enterprise' : apiUser.subscriptionPlan === 'pro' ? 'pro' : 'none') as 'none' | 'pro' | 'enterprise',
+          subscriptionStatus: (apiUser.isSubscribed ? 'active' : 'inactive') as 'inactive' | 'active' | 'cancelled',
+          subscriptionEndDate: apiUser.subscriptionEndDate ? String(apiUser.subscriptionEndDate) : undefined,
+          isSubscribed: !!apiUser.isSubscribed,
+        };
+
+        register(mappedUser, token);
+        navigate('/pricing');
+        return;
+      }
+    } catch (_) {
+      // ignore; fallback demo
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 800));
     const newUser = {
       id: 'user-' + Date.now(),
-      email: email,
-      name: name,
-      role: 'user' as const,
-      plan: 'none' as const,
-      subscriptionStatus: 'inactive' as const,
+      email,
+      name,
+      role: 'user' as 'user' | 'admin',
+      plan: 'none' as 'none' | 'pro' | 'enterprise',
+      subscriptionStatus: 'inactive' as 'inactive' | 'active' | 'cancelled',
       isSubscribed: false,
     };
     register(newUser, 'token-' + Date.now());

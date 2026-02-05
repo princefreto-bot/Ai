@@ -390,6 +390,21 @@ function AnalyzingLoader() {
 export function Dashboard() {
   const { isAuthenticated, user, currentAnalysis, analyses, isAnalyzing } = useStore();
 
+  // Analyse prioritaire après paiement (2h)
+  const [priorityUntil, setPriorityUntil] = useState<number | null>(null);
+  useEffect(() => {
+    const ts = localStorage.getItem('priority_until');
+    if (ts) setPriorityUntil(parseInt(ts, 10));
+  }, []);
+
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // priority banner helper values computed inline in render
+
   // Calcul des vraies stats
   const stats = {
     analyses: analyses.length,
@@ -488,6 +503,23 @@ export function Dashboard() {
           </motion.div>
         </motion.div>
 
+        {/* Priority banner */}
+        {priorityUntil && now < priorityUntil && (
+          <motion.div 
+            className="mb-6 p-4 rounded-2xl border border-pink-500/30 bg-pink-500/10 text-pink-200 flex items-center justify-between"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="flex items-center gap-3">
+              <Crown className="w-5 h-5" />
+              <span className="font-bold">Analyse prioritaire active</span>
+            </div>
+            <div className="text-sm">
+              Se termine dans {Math.floor((Math.max(0, priorityUntil - now) / 1000) / 60)}m {Math.floor((Math.max(0, priorityUntil - now) / 1000) % 60)}s
+            </div>
+          </motion.div>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-10">
           <StatCard
@@ -526,7 +558,7 @@ export function Dashboard() {
 
         {/* Subscription Status Bar */}
         <motion.div 
-          className={`mb-8 p-4 rounded-2xl border backdrop-blur-sm ${user?.isSubscribed 
+          className={`mb-3 p-4 rounded-2xl border backdrop-blur-sm ${user?.isSubscribed 
             ? 'bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-pink-500/10 border-pink-500/30' 
             : 'bg-gradient-to-r from-slate-800/50 to-slate-900/50 border-slate-700/50'
           }`}

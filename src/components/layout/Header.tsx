@@ -27,6 +27,7 @@ export function Header() {
   const navItems = [
     { label: 'Fonctionnalités', href: '/#features' },
     { label: 'Tarifs', href: '/pricing' },
+    { label: 'Analyse perso', href: '/analysis/request' },
   ];
 
   return (
@@ -138,6 +139,17 @@ export function Header() {
                       </Button>
                     </motion.div>
                   </Link>
+
+                  {user?.role === 'admin' && (
+                    <Link to="/admin">
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button variant="ghost" className="font-semibold text-pink-600">
+                          <Crown className="w-4 h-4 mr-2" />
+                          Admin
+                        </Button>
+                      </motion.div>
+                    </Link>
+                  )}
                   
                   {user?.isSubscribed && (
                     <motion.div 

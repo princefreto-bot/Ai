@@ -40,7 +40,7 @@ const PaymentSchema = new Schema<IPayment>({
   },
   plan: {
     type: String,
-    enum: ['pro', 'enterprise'],
+    enum: ['pro', 'enterprise', 'custom'],
     required: true
   },
   amount: {

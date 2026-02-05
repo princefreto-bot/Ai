@@ -1,4 +1,4 @@
-import React from 'react';
+// Articles Page
 import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, Calendar, ArrowRight, TrendingUp, ShieldCheck, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';

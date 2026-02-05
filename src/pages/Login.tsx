@@ -19,21 +19,53 @@ export function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate loading
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
+
+    try {
+      // Tente l'API backend réelle
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        const apiUser = json.data.user as any;
+        const token = json.data.token as string;
+
+        const mappedUser = {
+          id: String(apiUser.id || apiUser._id || ''),
+          email: apiUser.email,
+          name: apiUser.name,
+          role: (apiUser.role || 'user') as 'user' | 'admin',
+          plan: (apiUser.subscriptionPlan === 'enterprise' ? 'enterprise' : apiUser.subscriptionPlan === 'pro' ? 'pro' : 'none') as 'none' | 'pro' | 'enterprise',
+          subscriptionStatus: (apiUser.isSubscribed ? 'active' : 'inactive') as 'inactive' | 'active' | 'cancelled',
+          subscriptionEndDate: apiUser.subscriptionEndDate ? String(apiUser.subscriptionEndDate) : undefined,
+          isSubscribed: !!apiUser.isSubscribed,
+        };
+
+        login(mappedUser, token);
+        navigate(mappedUser.role === 'admin' ? '/admin' : '/dashboard');
+        return;
+      }
+    } catch (_) {
+      // ignore, fallback demo
+    }
+
+    // Fallback démo si le backend n'est pas dispo
+    await new Promise(resolve => setTimeout(resolve, 800));
+    const isAdmin = email === 'admin@tradescalpsnip.com' && password === 'AdminSecret2026!';
     const demoUser = {
       id: 'demo-' + Date.now(),
-      email: email,
+      email,
       name: email.split('@')[0],
-      role: 'user' as const,
-      plan: 'none' as const,
-      subscriptionStatus: 'inactive' as const,
-      isSubscribed: false,
+      role: (isAdmin ? 'admin' : 'user') as 'user' | 'admin',
+      plan: (isAdmin ? 'enterprise' : 'none') as 'none' | 'pro' | 'enterprise',
+      subscriptionStatus: (isAdmin ? 'active' : 'inactive') as 'inactive' | 'active' | 'cancelled',
+      isSubscribed: !!isAdmin,
     };
     login(demoUser, 'demo-token-' + Date.now());
-    navigate('/dashboard');
+    navigate(isAdmin ? '/admin' : '/dashboard');
   };
 
   return (

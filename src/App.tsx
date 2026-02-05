@@ -13,6 +13,7 @@ import Contact from './pages/Contact';
 import Admin from './pages/Admin';
 import IntroVideo from './components/ui/IntroVideo';
 import Preloader from './components/ui/Preloader';
+import CustomAnalysis from './pages/CustomAnalysis';
 
 export function App() {
   const [loadingState, setLoadingState] = useState<'preloading' | 'intro' | 'content'>('preloading');
@@ -43,6 +44,7 @@ export function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/analysis/request" element={<CustomAnalysis />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/articles" element={<Articles />} />

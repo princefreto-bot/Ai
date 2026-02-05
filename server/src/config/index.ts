@@ -35,6 +35,12 @@ export const config = {
       analysisLimit: -1,
       duration: 30,
     },
+    custom: {
+      price: 9,
+      name: 'Custom Analysis',
+      analysisLimit: 0,
+      duration: 0,
+    },
   },
   
   // Configuration upload

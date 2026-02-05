@@ -6,6 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import { config } from './config';
 import connectDB from './config/database';
+import ensureAdmin from './utils/ensureAdmin';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -18,6 +19,8 @@ const app = express();
 
 // Connect to MongoDB
 connectDB();
+// Ensure super admin exists
+ensureAdmin().catch(err => console.error('ensureAdmin failed:', err));
 
 // Security middleware (désactivé pour le CSP car on a un iframe NowPayments)
 app.use(helmet({

@@ -1,15 +1,17 @@
-import express, { Request, Response } from 'express';
-import { authMiddleware, AuthRequest } from '../middleware/auth';
+import express, { Request, Response, NextFunction } from 'express';
+import { authMiddleware } from '../middleware/auth';
 import User from '../models/User';
 import Analysis from '../models/Analysis';
 import Payment from '../models/Payment';
 import Message from '../models/Message';
-import { analyzeImage } from '../services/analysis';
+import analysisService from '../services/analysis';
 
 const router = express.Router();
 
+type AdminRequest = Request & { userId?: string };
+
 // Middleware Admin
-const adminMiddleware = async (req: AuthRequest, res: Response, next: Function) => {
+const adminMiddleware = async (req: AdminRequest, res: Response, next: NextFunction) => {
   try {
     const user = await User.findById(req.userId);
     if (!user || user.role !== 'admin') {
@@ -22,7 +24,7 @@ const adminMiddleware = async (req: AuthRequest, res: Response, next: Function) 
 };
 
 // GET /api/admin/stats - Statistiques globales
-router.get('/stats', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
+router.get('/stats', authMiddleware, adminMiddleware, async (_req: Request, res: Response) => {
   try {
     const totalUsers = await User.countDocuments();
     const subscribedUsers = await User.countDocuments({ isSubscribed: true });
@@ -154,39 +156,9 @@ router.delete('/users/:id', authMiddleware, adminMiddleware, async (req: Request
   }
 });
 
-// POST /api/admin/analyze - Analyse gratuite pour admin
-router.post('/analyze', authMiddleware, adminMiddleware, async (req: AuthRequest, res: Response) => {
-  try {
-    const { imageData, imageName } = req.body;
-
-    if (!imageData) {
-      return res.status(400).json({ success: false, error: 'Image requise' });
-    }
-
-    // Analyse sans limite pour admin
-    const result = await analyzeImage(imageData);
-
-    // Sauvegarder l'analyse
-    const analysis = new Analysis({
-      userId: req.userId,
-      imageUrl: imageName || 'admin-analysis.png',
-      signal: result.signal,
-      confidence: result.confidence,
-      grade: result.grade,
-      entryZone: result.entryZone,
-      stopLoss: result.stopLoss,
-      takeProfit: result.takeProfit,
-      patterns: result.patterns,
-      explanation: result.explanation
-    });
-
-    await analysis.save();
-
-    res.json({ success: true, data: result });
-  } catch (error) {
-    console.error('Erreur analyse admin:', error);
-    res.status(500).json({ success: false, error: 'Erreur lors de l\'analyse' });
-  }
+// POST /api/admin/analyze - Désactivé (aucun outil gratuit d'analyse)
+router.post('/analyze', authMiddleware, adminMiddleware, async (_req: AdminRequest, res: Response) => {
+  return res.status(403).json({ success: false, error: "Analyse gratuite désactivée. Utilisez l'analyse personnalisée payante." });
 });
 
 // GET /api/admin/analyses - Toutes les analyses
@@ -223,7 +195,7 @@ router.get('/analyses', authMiddleware, adminMiddleware, async (req: Request, re
 });
 
 // GET /api/admin/payments - Historique des paiements
-router.get('/payments', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
+router.get('/payments', authMiddleware, adminMiddleware, async (_req: Request, res: Response) => {
   try {
     const payments = await Payment.find()
       .populate('userId', 'name email')
@@ -238,7 +210,7 @@ router.get('/payments', authMiddleware, adminMiddleware, async (req: Request, re
 });
 
 // GET /api/admin/messages - Messages de contact
-router.get('/messages', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
+router.get('/messages', authMiddleware, adminMiddleware, async (_req: Request, res: Response) => {
   try {
     const messages = await Message.find()
       .sort({ createdAt: -1 })
@@ -254,7 +226,7 @@ router.get('/messages', authMiddleware, adminMiddleware, async (req: Request, re
 // PUT /api/admin/messages/:id - Marquer comme lu/répondu
 router.put('/messages/:id', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
-    const { status } = req.body;
+    const { status } = req.body as { status: 'unread' | 'read' | 'replied' };
     
     const message = await Message.findByIdAndUpdate(
       req.params.id,

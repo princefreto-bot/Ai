@@ -1,4 +1,4 @@
-import React from 'react';
+// Testimonials Page
 import { motion } from 'framer-motion';
 import { ArrowLeft, Star, CheckCircle, UserCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
